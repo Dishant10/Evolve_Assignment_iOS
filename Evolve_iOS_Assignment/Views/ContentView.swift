@@ -13,6 +13,7 @@ struct ContentView: View {
     
     @State var searchText: String = ""
     @State var problemsList: [String] = []
+    @State private var scrollViewID = UUID()
     @StateObject var networkManager = NetworkManager()
     
     let chips: [String] = ["All","🌻 Self-love","🌈 LGBTQIA+","🧠 Neurodiversity","❤️ Relationships","💼 Work","🌸 Sexual health","💵 Finance"]
@@ -33,9 +34,6 @@ struct ContentView: View {
                 Text("Discover")
                     .font(.title2)
                     .fontWeight(.bold)
-                    .onTapGesture {
-                        networkManager.fetchData()
-                    }
                 HStack {
                     Image(systemName: "magnifyingglass")
                         .resizable()
@@ -80,37 +78,71 @@ struct ContentView: View {
                     }
                 }
                 .padding(.top,6)
-                
-                ScrollView(showsIndicators: false) {
-                    LazyVGrid(columns: columns, spacing: 20) {
-                        ForEach(networkManager.items, id: \.id) { item in
-                            GridCellView(name: item.title)
-                        }
-                        if networkManager.currentPage < 4 {
-                            ForEach(0...1,id: \.self) { _ in
-                                GridCellViewShimmer()
-                            }
-                                .onAppear {
-                                    if networkManager.currentPage != 1 {
-                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: {
-                                            print("Current Page before - \(networkManager.currentPage)")
-                                            networkManager.fetchData()
-                                            print("Current Page after - \(networkManager.currentPage)")
-                                            if networkManager.currentPage == 3 {
-                                                networkManager.currentPage = 4
-                                            }
-                                        })
-                                        
+                //ScrollViewReader { scrollViewProxy in
+                    if networkManager.state == .loading {
+                        GridShimmer()
+                            
+                    } else if networkManager.state == .empty {
+                        EmptyStateView()
+                    }
+                    //else {
+                        
+                        ScrollView(showsIndicators: false) {
+                            LazyVGrid(columns: columns, spacing: 20) {
+                                ForEach(networkManager.items, id: \.id) { item in
+                                    GridCellView(name: item.title)
+                                }
+                                
+                                if networkManager.currentPage < 4 && searchText.isEmpty {
+                                    ForEach(0...1,id: \.self) { _ in
+                                        GridCellViewShimmer()
+                                            
+                                    }
+                                    .onAppear {
+                                        if networkManager.currentPage != 1  {
+                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: {
+                                                print("Current Page before - \(networkManager.currentPage)")
+                                                    networkManager.fetchData()
+                                                print("Current Page after - \(networkManager.currentPage)")
+                                                if networkManager.currentPage == 3 {
+                                                    networkManager.currentPage = 4
+                                                }
+                                            })
+                                        }
                                     }
                                 }
+                            }
+                            //.id(scrollViewID)
+                            .padding(.top)
                         }
-                    }
-                    .padding(.top)
-                }
+                        .contentTransition(.interpolate)
+                        .frame(maxHeight: networkManager.state != .success ? .zero : .infinity)
+                //}
             }
             .padding(.top,52)
             Spacer()
         }
+        .onAppear(perform: {
+            withAnimation {
+                networkManager.state = .loading
+                networkManager.currentPage = 1
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.9, execute: {
+                //withAnimation {
+                    networkManager.fetchData()
+                //}
+            })
+        })
+        .onChange(of: searchText, perform: { newValue in
+            if newValue.isEmpty {
+                networkManager.currentPage = 1
+                networkManager.state = .loading
+                networkManager.items.removeAll()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.9, execute: {
+                    networkManager.fetchData()
+                })
+            }
+        })
         .onChange(of: self.problemsList, perform: { newValue in
             if problemsList.isEmpty {
                 networkManager.items.removeAll()

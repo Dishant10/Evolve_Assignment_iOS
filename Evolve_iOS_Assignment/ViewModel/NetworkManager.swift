@@ -46,8 +46,8 @@ extension NetworkManager {
                         if decodedData.data.isEmpty {
                             self.state = .empty
                         } else {
-                            self.state = .success
                             self.items.append(contentsOf: decodedData.data)
+                            self.state = .success
                             if self.currentPage < 3 {
                                 self.currentPage += 1
                             }
