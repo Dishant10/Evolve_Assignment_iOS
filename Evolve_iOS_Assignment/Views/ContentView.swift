@@ -13,10 +13,12 @@ struct ContentView: View {
     
     @State var searchText: String = ""
     @State var problemsList: [String] = []
-    @State private var scrollViewID = UUID()
+    
     @StateObject var networkManager = NetworkManager()
+    @StateObject var viewModel = ViewModel()
     
     let chips: [String] = ["All","🌻 Self-love","🌈 LGBTQIA+","🧠 Neurodiversity","❤️ Relationships","💼 Work","🌸 Sexual health","💵 Finance"]
+    
     let columns = [ GridItem(.flexible()), GridItem(.flexible())]
     
     var body: some View {
@@ -71,21 +73,22 @@ struct ContentView: View {
                 
                 ScrollView(.horizontal,showsIndicators: false) {
                     HStack {
-                        ForEach(chips,id:\.self) { chipText in
+                        ForEach(viewModel.problems) { problem in
                             
-                            ChipView(chipNameText: chipText,problemsList: $problemsList)
+                            ChipView(problem: problem, isSelected: problem.isSelected, problemsList: $problemsList)
+                                .onTapGesture {
+                                    viewModel.toggleSelection(for: problem)
+                                }
                         }
                     }
                 }
                 .padding(.top,6)
-                //ScrollViewReader { scrollViewProxy in
                     if networkManager.state == .loading {
                         GridShimmer()
                             
                     } else if networkManager.state == .empty {
                         EmptyStateView()
                     }
-                    //else {
                         
                         ScrollView(showsIndicators: false) {
                             LazyVGrid(columns: columns, spacing: 20) {
@@ -112,12 +115,10 @@ struct ContentView: View {
                                     }
                                 }
                             }
-                            //.id(scrollViewID)
                             .padding(.top)
                         }
                         .contentTransition(.interpolate)
                         .frame(maxHeight: networkManager.state != .success ? .zero : .infinity)
-                //}
             }
             .padding(.top,52)
             Spacer()
@@ -128,9 +129,7 @@ struct ContentView: View {
                 networkManager.currentPage = 1
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.9, execute: {
-                //withAnimation {
                     networkManager.fetchData()
-                //}
             })
         })
         .onChange(of: searchText, perform: { newValue in
@@ -146,9 +145,12 @@ struct ContentView: View {
         .onChange(of: self.problemsList, perform: { newValue in
             if problemsList.isEmpty {
                 networkManager.items.removeAll()
+                networkManager.state = .loading
+                networkManager.currentPage = 1
                 networkManager.fetchData()
             } else {
-                //networkManager.filterListOnProblems(problemsList: newValue)
+                
+                viewModel.filterListOnProblems(problemsList: newValue)
             }
         })
         .ignoresSafeArea(edges: [.bottom])
@@ -161,47 +163,3 @@ struct ContentView: View {
     ContentView()
 }
 
-//struct ToolBarItems: View {
-//    
-//    @Environment(\.colorScheme) var colorScheme
-//    
-//    var body: some View {
-//        HStack(spacing: 4) {
-//            Image(systemName: "heart.fill")
-//                .resizable()
-//                .frame(width: 20, height: 17)
-//                .padding(10)
-//                .background(Color.gray.opacity(0.45))
-//                .clipShape(Circle())
-//                .contentShape(Circle())
-//                .foregroundStyle(colorScheme == .light ? .black : .white)
-//            
-//            Image("music_icon")
-//                .resizable()
-//                .frame(width: 16, height: 16)
-//                .padding(10)
-//                .background(Color.gray.opacity(0.45))
-//                .clipShape(Circle())
-//                .contentShape(Circle())
-//                .foregroundStyle(colorScheme == .light ? .black : .white)
-//        }
-//    }
-//}
-
-//struct ChipView: View {
-//    
-//    let chipNameText: String
-//    @Binding var problemsList: [String]
-//    
-//    var body: some View {
-//        Text(chipNameText)
-//            .font(.system(size:15))
-//            .foregroundStyle(.white)
-//            .padding(.vertical,12)
-//            .padding(.horizontal,20)
-//            .background(Color.gray.opacity(0.4),in: .capsule)
-//            .onTapGesture {
-//                problemsList.append(chipNameText)
-//            }
-//    }
-//}

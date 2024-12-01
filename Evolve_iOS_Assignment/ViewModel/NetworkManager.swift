@@ -12,6 +12,7 @@ class NetworkManager: ObservableObject {
     
     @Published var state: ViewState = .loading
     @Published var items: [Item] = []
+    @Published var tempItemsList: [Item] = []
     
     var currentPage: Int = 1
     
@@ -47,6 +48,7 @@ extension NetworkManager {
                             self.state = .empty
                         } else {
                             self.items.append(contentsOf: decodedData.data)
+                            self.tempItemsList = self.items
                             self.state = .success
                             if self.currentPage < 3 {
                                 self.currentPage += 1
@@ -101,17 +103,25 @@ extension NetworkManager {
     }
 
     
-//    func filterListOnProblems(problemsList: [String]) {
-//        if !problemsList.isEmpty {
-//            var filteredItems = [Item]()
+    func filterListOnProblems(problemsList: [String]) {
+        if !problemsList.isEmpty {
+            var filteredItems = [Item]()
+            print("Problems List: \(problemsList)")
+            print("Items: \(tempItemsList)")
 //            for problem in problemsList {
-//                filteredItems = items.filter { $0.problems.contains(where: { $0.localizedCaseInsensitiveContains(problem) }) }
+//                filteredItems = items.filter { $0.problems.contains(where: { $0.localizedC
+            filteredItems = tempItemsList.filter { item in
+                item.problems.contains { problem in
+                    problemsList.contains(problem)
+                }
+            }
+            print("Filtered Items: \(filteredItems)")
 //            }
-//            if !filteredItems.isEmpty {
-//                items = filteredItems
-//            }
-//        }
-//    }
+            if !filteredItems.isEmpty {
+                items = filteredItems
+            }
+        }
+    }
     
     
     

@@ -17,6 +17,7 @@ struct GridCellView: View {
                 .resizable()
                 .renderingMode(.original)
                 .cornerRadius(8)
+                .frame(width:170,height:116)
             VStack(alignment: .leading, spacing: 4) {
                 Text(name)
                     .font(.system(size: 18))

@@ -9,18 +9,23 @@ import SwiftUI
 
 struct ChipView: View {
     
-    let chipNameText: String
+    let problem: Problem
+    let isSelected: Bool
     @Binding var problemsList: [String]
     
     var body: some View {
-        Text(chipNameText)
-            .font(.system(size:15))
-            .foregroundStyle(.white)
-            .padding(.vertical,12)
-            .padding(.horizontal,20)
-            .background(Color.gray.opacity(0.4),in: .capsule)
-            .onTapGesture {
-                problemsList.append(chipNameText)
+        HStack {
+            Text(problem.title)
+                .font(.system(size:15))
+                .foregroundStyle(.white)
+            if isSelected {
+                Image(systemName: "checkmark")
+                    .resizable()
+                    .frame(width: 12,height: 7.5)
             }
+        }
+        .padding(.vertical,12)
+        .padding(.horizontal,20)
+        .background(Color.gray.opacity(0.4),in: .capsule)
     }
 }
