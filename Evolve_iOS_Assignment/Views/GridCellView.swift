@@ -9,6 +9,8 @@ import SwiftUI
 
 struct GridCellView: View {
     var name: String
+    var mins: String
+    var promoText: String
     
     var body: some View {
         
@@ -22,13 +24,12 @@ struct GridCellView: View {
                 Text(name)
                     .font(.system(size: 18))
                     .bold()
-                Text("5 sessions • 5-10 mins")
+                Text("\(promoText) • \(mins)")
                     .foregroundStyle(.secondary)
                     .font(.system(size: 12))
             }
             .padding(.top,8)
         }
-        .frame(maxWidth:170,maxHeight:198)
         .cornerRadius(8)
         
     }

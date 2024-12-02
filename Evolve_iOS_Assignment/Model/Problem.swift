@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct Problem: Identifiable {
+struct Problem: Identifiable,Equatable {
     let id = UUID()
     let title: String
     var isSelected: Bool = false

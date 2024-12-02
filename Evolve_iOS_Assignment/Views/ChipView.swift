@@ -11,7 +11,6 @@ struct ChipView: View {
     
     let problem: Problem
     let isSelected: Bool
-    @Binding var problemsList: [String]
     
     var body: some View {
         HStack {

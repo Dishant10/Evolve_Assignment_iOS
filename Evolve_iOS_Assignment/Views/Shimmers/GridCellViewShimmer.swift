@@ -9,7 +9,7 @@ import SwiftUI
 
 struct GridCellViewShimmer: View {
     var body: some View {
-        VStack(alignment: .center,spacing: 0) {
+        VStack(alignment: .leading,spacing: 0) {
             RoundedRectangle(cornerRadius: 8)
                 .foregroundStyle(Color.gray)
                 .frame(width:170,height: 116)

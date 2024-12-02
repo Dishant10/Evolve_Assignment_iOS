@@ -75,9 +75,19 @@ struct ContentView: View {
                     HStack {
                         ForEach(viewModel.problems) { problem in
                             
-                            ChipView(problem: problem, isSelected: problem.isSelected, problemsList: $problemsList)
+                            ChipView(problem: problem, isSelected: problem.isSelected)
                                 .onTapGesture {
+                                    if problem.title == "All" {
+                                        networkManager.problemsList.removeAll()
+                                    } else {
+                                        if let index = networkManager.problemsList.firstIndex(where: { $0.id == problem.id}){
+                                            networkManager.problemsList.remove(at: index)
+                                        } else {
+                                            networkManager.problemsList.append(problem)
+                                        }
+                                    }
                                     viewModel.toggleSelection(for: problem)
+                                    
                                 }
                         }
                     }
@@ -93,19 +103,18 @@ struct ContentView: View {
                         ScrollView(showsIndicators: false) {
                             LazyVGrid(columns: columns, spacing: 20) {
                                 ForEach(networkManager.items, id: \.id) { item in
-                                    GridCellView(name: item.title)
+                                    GridCellView(name: item.title, mins: item.mins, promoText: item.promoText)
                                 }
                                 
-                                if networkManager.currentPage < 4 && searchText.isEmpty {
+                                if networkManager.currentPage < 4 && searchText.isEmpty && networkManager.problemsList.count == 0 {
                                     ForEach(0...1,id: \.self) { _ in
                                         GridCellViewShimmer()
-                                            
                                     }
                                     .onAppear {
                                         if networkManager.currentPage != 1  {
                                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: {
                                                 print("Current Page before - \(networkManager.currentPage)")
-                                                    networkManager.fetchData()
+                                                    networkManager.fetchDataInPages()
                                                 print("Current Page after - \(networkManager.currentPage)")
                                                 if networkManager.currentPage == 3 {
                                                     networkManager.currentPage = 4
@@ -115,21 +124,22 @@ struct ContentView: View {
                                     }
                                 }
                             }
-                            .padding(.top)
+                            .padding(.vertical)
                         }
                         .contentTransition(.interpolate)
                         .frame(maxHeight: networkManager.state != .success ? .zero : .infinity)
             }
             .padding(.top,52)
-            Spacer()
+            //Spacer()
         }
         .onAppear(perform: {
             withAnimation {
                 networkManager.state = .loading
                 networkManager.currentPage = 1
             }
+            networkManager.fetchData()
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.9, execute: {
-                    networkManager.fetchData()
+                    networkManager.fetchDataInPages()
             })
         })
         .onChange(of: searchText, perform: { newValue in
@@ -138,19 +148,20 @@ struct ContentView: View {
                 networkManager.state = .loading
                 networkManager.items.removeAll()
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.9, execute: {
-                    networkManager.fetchData()
+                    networkManager.fetchDataInPages()
                 })
             }
         })
-        .onChange(of: self.problemsList, perform: { newValue in
-            if problemsList.isEmpty {
+        .onChange(of: networkManager.problemsList, perform: { newValue in
+            print("Problems List \(networkManager.problemsList)")
+            if networkManager.problemsList.isEmpty {
                 networkManager.items.removeAll()
                 networkManager.state = .loading
                 networkManager.currentPage = 1
-                networkManager.fetchData()
+                networkManager.fetchDataInPages()
             } else {
-                
-                viewModel.filterListOnProblems(problemsList: newValue)
+                print("YES")
+                networkManager.filterListOnProblems(problemsList: newValue)
             }
         })
         .ignoresSafeArea(edges: [.bottom])
