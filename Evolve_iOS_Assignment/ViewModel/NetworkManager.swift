@@ -107,6 +107,7 @@ extension NetworkManager {
         
         guard let url = URL(string: urlString) else {
             self.state = .error(.invaildURL("Invalid URL"))
+            self.cachedItemsList.removeAll()
             return
         }
         
@@ -137,12 +138,18 @@ extension NetworkManager {
                 } catch {
                     DispatchQueue.main.async(execute: {
                         self.state = .error(.unknown(error.localizedDescription))
+                        self.cachedItemsList.removeAll()
                     })
                     
                 }
             } else {
-                self.state = .error(.invalidData(error?.localizedDescription ?? "Response data is invalid"))
-                return
+                DispatchQueue.main.async(execute: {
+                    self.state = .error(.invalidData(error?.localizedDescription ?? "Response data is invalid"))
+                    self.cachedItemsList.removeAll()
+                    return
+
+                })
+                          
             }
         }.resume()
     }
