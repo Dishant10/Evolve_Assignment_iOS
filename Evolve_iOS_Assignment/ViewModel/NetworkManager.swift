@@ -207,7 +207,7 @@ extension NetworkManager {
                 let items = try JSONDecoder().decode([Item].self, from: data)
                 if items.isEmpty {
                     DispatchQueue.main.async(execute:  {
-                        self.state = .error(.unknown("Failed to fetch data from UserDefaults: \(error)"))
+                        self.state = .error(.unknown("Failed to fetch data from UserDefaults"))
                     })
                 }
                 else {
