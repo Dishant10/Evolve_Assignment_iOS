@@ -22,7 +22,7 @@ class NetworkManager: ObservableObject {
     
     var currentPage: Int = 1
     
-    let baseURL: String = "http://localhost:3000/data"
+    let baseURL: String = "http://localhost:4000/data"
     
     
     func filterListOnProblems(problemsList: [Problem]) {
