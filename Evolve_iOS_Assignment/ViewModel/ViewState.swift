@@ -11,5 +11,5 @@ enum ViewState: Equatable {
     case loading
     case success
     case empty
-    case error(String)
+    case error(APIError)
 }

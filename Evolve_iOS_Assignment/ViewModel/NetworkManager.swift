@@ -12,8 +12,9 @@ class NetworkManager: ObservableObject {
     
     @Published var state: ViewState = .loading
     @Published var items: [Item] = []
-    @Published var tempItemsList: [Item] = []
     @Published var completeItemsList: [Item] = []
+    private let itemsKey = "itemsKey"
+    @Published var cachedItemsList: [Item] = []
     
     let problems: [Problem] = [Problem(title: "All"), Problem(title: "🌻 Self-love"), Problem(title: "🌈 LGBTQIA+"), Problem(title: "🧠 Neurodiversity"), Problem(title: "❤️ Relationships"), Problem(title: "💼 Work"), Problem(title: "🌸 Sexual health"), Problem(title: "💵 Finance") ]
     
@@ -22,6 +23,7 @@ class NetworkManager: ObservableObject {
     var currentPage: Int = 1
     
     let baseURL: String = "http://localhost:3000/data"
+    
     
     func filterListOnProblems(problemsList: [Problem]) {
                 
@@ -55,15 +57,18 @@ extension NetworkManager {
         }
         
         guard let url = URL(string: urlString) else {
-            self.state = .error("Invalid URL")
+            self.state = .error(.invaildURL("Invalid URL"))
             return
         }
         
         URLSession.shared.dataTask(with: url) { data, _, error in
-            if let error = error {
-                self.state = .error(error.localizedDescription)
-                return
+            DispatchQueue.main.async {
+                if let error = error {
+                    self.state = .error(.serverError(error.localizedDescription))
+                    return
+                }
             }
+            
             if let data = data {
                 do {
                     let decodedData = try JSONDecoder().decode(Response.self, from: data)
@@ -72,7 +77,6 @@ extension NetworkManager {
                             self.state = .empty
                         } else {
                             self.items.append(contentsOf: decodedData.data)
-                            self.tempItemsList = self.items
                             self.state = .success
                             if self.currentPage < 3 {
                                 self.currentPage += 1
@@ -80,10 +84,15 @@ extension NetworkManager {
                         }
                     }
                 } catch {
-                    self.state = .error(error.localizedDescription)
+                    DispatchQueue.main.async(execute: {
+                        self.state = .error(.invalidData(error.localizedDescription))
+                    })
+                    
                 }
             } else {
-                self.state = .error("No data received")
+                DispatchQueue.main.async(execute: {
+                    self.state = .error(.unknown(error?.localizedDescription ?? "Response data is invalid"))
+                })
                 return
             }
         }.resume()
@@ -97,11 +106,19 @@ extension NetworkManager {
         }
         
         guard let url = URL(string: urlString) else {
-            self.state = .error("Invalid URL")
+            self.state = .error(.invaildURL("Invalid URL"))
             return
         }
         
         URLSession.shared.dataTask(with: url) { data, _, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    self.state = .error(.serverError(error.localizedDescription))
+                    return
+                }
+
+            }
+            
             if let data = data {
                 do {
                     let decodedData = try JSONDecoder().decode([Item].self, from: data)
@@ -118,10 +135,13 @@ extension NetworkManager {
                         }
                     }
                 } catch {
-                    self.state = .error(error.localizedDescription)
+                    DispatchQueue.main.async(execute: {
+                        self.state = .error(.unknown(error.localizedDescription))
+                    })
+                    
                 }
             } else {
-                self.state = .error("No data received")
+                self.state = .error(.invalidData(error?.localizedDescription ?? "Response data is invalid"))
                 return
             }
         }.resume()
@@ -129,40 +149,82 @@ extension NetworkManager {
 
     
     func fetchData() {
-        //state = .loading
         var urlString: String {
             return "\(baseURL)"
         }
         
         guard let url = URL(string: urlString) else {
-           // self.state = .error("Invalid URL")
+            self.fetchDataFromUserDefaults()
             return
         }
         
         URLSession.shared.dataTask(with: url) { data, _, error in
+            if let error = error {
+                self.fetchDataFromUserDefaults()
+            }
             if let data = data {
+                print(data)
                 do {
                     let decodedData = try JSONDecoder().decode([Item].self, from: data)
                     DispatchQueue.main.async {
                     if decodedData.isEmpty {
-                        //self.state = .empty
                     } else {
-                        
-                        //self.state = .success
                         self.completeItemsList.removeAll()
                         self.completeItemsList = decodedData
+                        self.saveDataToUserDefaults(items: self.completeItemsList)
+                        print(decodedData)
                     }
                     }
                 } catch {
-                    //self.state = .error(error.localizedDescription)
+                    print("Error")
                 }
             } else {
-                //self.state = .error("No data received")
+                self.fetchDataFromUserDefaults()
                 return
             }
         }.resume()
     }
 
+}
+
+extension NetworkManager {
     
+    
+    func saveDataToUserDefaults(items: [Item]) {
+        do {
+            let data = try JSONEncoder().encode(items)
+            UserDefaults.standard.set(data, forKey: itemsKey)
+        }
+        catch {
+            print("Failed to save data to UserDefaults: \(error)")
+        }
+    }
+        
+    
+    func fetchDataFromUserDefaults() {
+        if let data = UserDefaults.standard.data(forKey: itemsKey) {
+            do {
+                let items = try JSONDecoder().decode([Item].self, from: data)
+                if items.isEmpty {
+                    DispatchQueue.main.async(execute:  {
+                        self.state = .error(.unknown("Failed to fetch data from UserDefaults: \(error)"))
+                    })
+                }
+                else {
+                    DispatchQueue.main.async(execute:  {
+                        self.cachedItemsList = items
+                    })
+                    
+                }
+            } catch {
+                DispatchQueue.main.async(execute:  {
+                    self.state = .error(.unknown("Failed to fetch data from UserDefaults: \(error)"))
+                })
+            }
+        } else {
+            self.state = .empty
+        }
+    }
+
     
 }

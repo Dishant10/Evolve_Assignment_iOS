@@ -12,12 +12,9 @@ struct ContentView: View {
     @FocusState var isFocused : Bool
     
     @State var searchText: String = ""
-    @State var problemsList: [String] = []
     
     @StateObject var networkManager = NetworkManager()
     @StateObject var viewModel = ViewModel()
-    
-    let chips: [String] = ["All","🌻 Self-love","🌈 LGBTQIA+","🧠 Neurodiversity","❤️ Relationships","💼 Work","🌸 Sexual health","💵 Finance"]
     
     let columns = [ GridItem(.flexible()), GridItem(.flexible())]
     
@@ -98,21 +95,37 @@ struct ContentView: View {
                             
                     } else if networkManager.state == .empty {
                         EmptyStateView()
+                    } else if case .error(let error) = networkManager.state {
+                        VStack {
+                            
+                            if !networkManager.cachedItemsList.isEmpty {
+                                ScrollView(showsIndicators: false) {
+                                    LazyVGrid(columns: columns, spacing: 20) {
+                                        ForEach(networkManager.cachedItemsList, id: \.id) { item in
+                                            GridCellView(name: item.title, mins: item.mins, promoText: item.promoText, imageURL: item.thumbImage)
+                                        }
+                                    }
+                                    .padding(.top)
+                                }
+                            } else {
+                                ErrorStateView(message: error.errorDescription ?? "Error")
+                            }
+                        }
                     }
                         
                         ScrollView(showsIndicators: false) {
                             LazyVGrid(columns: columns, spacing: 20) {
                                 ForEach(networkManager.items, id: \.id) { item in
-                                    GridCellView(name: item.title, mins: item.mins, promoText: item.promoText)
+                                    GridCellView(name: item.title, mins: item.mins, promoText: item.promoText, imageURL: item.thumbImage)
                                 }
                                 
                                 if networkManager.currentPage < 4 && searchText.isEmpty && networkManager.problemsList.count == 0 {
-                                    ForEach(0...1,id: \.self) { _ in
-                                        GridCellViewShimmer()
-                                    }
+                                        ProgressView()
+                                            .padding(.bottom,32)
+                                            .frame(maxWidth: .infinity, alignment: .center)
                                     .onAppear {
                                         if networkManager.currentPage != 1  {
-                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: {
+                                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6, execute: {
                                                 print("Current Page before - \(networkManager.currentPage)")
                                                     networkManager.fetchDataInPages()
                                                 print("Current Page after - \(networkManager.currentPage)")
@@ -131,6 +144,14 @@ struct ContentView: View {
             }
             .padding(.top,52)
             //Spacer()
+        }
+        .refreshable {
+            networkManager.currentPage = 1
+            networkManager.state = .loading
+            networkManager.items.removeAll()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.9, execute: {
+                networkManager.fetchDataInPages()
+            })
         }
         .onAppear(perform: {
             withAnimation {

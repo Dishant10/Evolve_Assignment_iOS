@@ -33,7 +33,7 @@ struct ErrorStateView: View {
             Spacer()
             HStack {
                 Spacer()
-                Text("Error: \(message)")
+                Text("\(message)")
                     .font(.title2)
                     .fontWeight(.bold)
                     .foregroundColor(.red)
@@ -41,5 +41,6 @@ struct ErrorStateView: View {
             }
             Spacer()
         }
+        .padding(.bottom,16)
     }
 }

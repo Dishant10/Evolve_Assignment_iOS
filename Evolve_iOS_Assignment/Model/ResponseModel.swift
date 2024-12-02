@@ -17,28 +17,57 @@ struct Response: Codable {
     let data : [Item]
 }
 
-struct Item: Identifiable, Codable,Equatable {
+struct Items: Identifiable, Codable, Equatable {
     let id: Int
     let title: String
     let promoText: String
-    let description: String
-    let numDays: Int
     let thumbImage: String
-    let coverImage: String
     let problems: [String]
     let sessions: String
     let mins: String
     
     enum CodingKeys: String, CodingKey {
         
-        case id, title, problems, description, mins, sessions
+        case id, title, problems, mins, sessions
         
         case promoText = "promo_text"
-        case numDays = "num_days"
         case thumbImage = "thumb_image"
-        case coverImage = "cover_image"
     }
     
+}
+
+struct Item: Identifiable, Codable {
+    
+    let id: String
+    let title: String
+    let juLabel: String
+    let promoText: String
+    let description: String
+    
+    let thumbImage: String
+    let coverImage: String
+    let juLink: String?
+    let problems: [String]
+    let techniques: [String]
+    let details: String
+    let sessions: String
+    let mins: String
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case title
+        case juLabel = "ju_label"
+        case promoText = "promo_text"
+        case description
+        case thumbImage = "thumb_image"
+        case coverImage = "cover_image"
+        case juLink = "ju_link"
+        case problems
+        case techniques
+        case details
+        case sessions
+        case mins
+    }
 }
 
 
